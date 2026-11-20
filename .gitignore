@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Build e cobertura
+dist/
+build/
+coverage/
+.vercel/
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.*
+!.env.example
+
+# Logs e sistema
+*.log
+npm-debug.log*
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
