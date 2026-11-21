@@ -1,0 +1,11 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs" // o projeto é CommonJS (package.json sem "type": "module")
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+

@@ -38,7 +38,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   private toErrorBody(exception: unknown): ErrorResponseBody {
     if (!(exception instanceof HttpException)) {
-    
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         code: 'INTERNAL_SERVER_ERROR',
@@ -55,7 +54,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const { code, message, details } = payload as HttpExceptionPayload;
-
 
     if (Array.isArray(message)) {
       return {

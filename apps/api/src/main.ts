@@ -10,6 +10,8 @@ async function bootstrap(): Promise<void> {
 
   configureApp(app);
 
+  app.enableShutdownHooks();
+
   app.enableCors({
     origin: config.getOrThrow<string>('CORS_ORIGIN').split(','),
   });
@@ -19,7 +21,11 @@ async function bootstrap(): Promise<void> {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  SwaggerModule.setup(
+    'docs',
+    app,
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
 
   // 0.0.0.0 para aceitar conexões de fora do container (Docker/Railway)
   await app.listen(config.getOrThrow<number>('PORT'), '0.0.0.0');
