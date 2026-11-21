@@ -13,7 +13,7 @@ describe('Health (e2e)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    configureApp(app); // mesma configuração global da produção
+    configureApp(app);
     await app.init();
   });
 
@@ -25,7 +25,7 @@ describe('Health (e2e)', () => {
     return request(app.getHttpServer())
       .get('/health')
       .expect(200)
-      .expect({ status: 'ok' });
+      .expect({ status: 'ok', database: 'up' });
   });
 
   it('returns the standardized error body for unknown routes', async () => {
