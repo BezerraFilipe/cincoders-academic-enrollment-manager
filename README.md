@@ -22,4 +22,35 @@ Desenvolvido como teste prático para vaga de Engenheiro de Software no CIn-UFPE
 
 ## Como executar
 
-> Em construção.
+Pré-requisito: [Docker](https://docs.docker.com/get-docker/) com Docker Compose.
+
+```bash
+docker compose up --build
+```
+
+| Serviço | Endereço |
+|---|---|
+| Front-end | http://localhost:8080 |
+| API | http://localhost:3000 |
+| Documentação da API (Swagger) | http://localhost:3000/docs |
+| PostgreSQL | `localhost:5432` (usuário, senha e banco: `enrollment`) |
+
+As migrations do banco são aplicadas automaticamente quando a API inicia.
+
+### Desenvolvimento local (sem Docker para API e front)
+
+```bash
+docker compose up -d db
+
+cd apps/api
+cp .env.example .env
+npm install
+npm run start:dev
+
+cd ../web
+cp .env.example .env
+npm install
+npm run dev
+```
+
+O front-end fica em http://localhost:5173 e a API em http://localhost:3000.
