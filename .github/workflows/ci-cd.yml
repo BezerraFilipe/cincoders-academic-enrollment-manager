@@ -1,0 +1,110 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  api:
+    name: API - lint, testes e build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: enrollment
+          POSTGRES_PASSWORD: enrollment
+          POSTGRES_DB: enrollment
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U enrollment -d enrollment"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://enrollment:enrollment@localhost:5432/enrollment?schema=public
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npx prisma migrate deploy
+      - run: npm run test:e2e
+      - run: npm run build
+
+  web:
+    name: Web - lint, testes e build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      VITE_API_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  deploy-api:
+    name: Deploy API (Railway)
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    environment:
+      name: production-api
+      url: https://api-production-5758fb0c.up.railway.app
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npx --yes @railway/cli@5 up --service api --ci
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-web:
+    name: Deploy Web (Vercel)
+    needs: [deploy-api]
+    runs-on: ubuntu-latest
+    environment:
+      name: production-web
+      url: https://cincoders-enrollment-manager-web.vercel.app
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npx --yes vercel@66 pull --yes --environment=production --token=$VERCEL_TOKEN
+      - run: npx --yes vercel@66 build --prod --token=$VERCEL_TOKEN
+      - run: npx --yes vercel@66 deploy --prebuilt --prod --token=$VERCEL_TOKEN
