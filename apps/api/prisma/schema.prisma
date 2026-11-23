@@ -8,3 +8,177 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserRole {
+  REGISTRAR
+  STUDENT
+
+  @@map("user_role")
+}
+
+enum CurriculumType {
+  MANDATORY
+  PROFILE_ELECTIVE
+
+  @@map("curriculum_type")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  CANCELLED
+
+  @@map("enrollment_status")
+}
+
+enum RecordStatus {
+  PASSED
+  FAILED
+
+  @@map("record_status")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         UserRole
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  student Student?
+
+  @@map("user")
+}
+
+model Student {
+  id                 Int    @id @default(autoincrement())
+  userId             Int    @unique @map("user_id")
+  courseId           Int    @map("course_id")
+  registrationNumber String @unique @map("registration_number") @db.VarChar(20)
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  enrollments     Enrollment[]
+  academicRecords AcademicRecord[]
+
+  @@index([courseId])
+  @@map("student")
+}
+
+model Course {
+  id                   Int    @id @default(autoincrement())
+  code                 String @unique @db.VarChar(20)
+  name                 String @db.VarChar(120)
+  mandatoryHours       Int    @map("mandatory_hours")
+  profileElectiveHours Int    @map("profile_elective_hours")
+  freeElectiveHours    Int    @map("free_elective_hours")
+
+  students   Student[]
+  curriculum CurriculumSubject[]
+
+  @@map("course")
+}
+
+model CurriculumSubject {
+  courseId  Int            @map("course_id")
+  subjectId Int            @map("subject_id")
+  type      CurriculumType
+
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@id([courseId, subjectId])
+  @@index([subjectId])
+  @@map("curriculum_subject")
+}
+
+model Subject {
+  id            Int      @id @default(autoincrement())
+  code          String   @unique @db.VarChar(10)
+  name          String   @db.VarChar(150)
+  workloadHours Int      @map("workload_hours")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  curriculum      CurriculumSubject[]
+  prerequisites   Prerequisite[]      @relation("SubjectPrerequisites")
+  requiredBy      Prerequisite[]      @relation("PrerequisiteOf")
+  sections        Section[]
+  academicRecords AcademicRecord[]
+
+  @@map("subject")
+}
+
+model Prerequisite {
+  subjectId      Int @map("subject_id")
+  prerequisiteId Int @map("prerequisite_id")
+
+  subject      Subject @relation("SubjectPrerequisites", fields: [subjectId], references: [id], onDelete: Cascade)
+  prerequisite Subject @relation("PrerequisiteOf", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+
+  @@id([subjectId, prerequisiteId])
+  @@index([prerequisiteId])
+  @@map("prerequisite")
+}
+
+model Professor {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  email     String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sections Section[]
+
+  @@map("professor")
+}
+
+model Section {
+  id          Int      @id @default(autoincrement())
+  code        String   @db.VarChar(5)
+  subjectId   Int      @map("subject_id")
+  professorId Int      @map("professor_id")
+  capacity    Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  professor   Professor    @relation(fields: [professorId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+
+  @@unique([subjectId, code])
+  @@index([professorId])
+  @@map("section")
+}
+
+model Enrollment {
+  id          Int              @id @default(autoincrement())
+  studentId   Int              @map("student_id")
+  sectionId   Int              @map("section_id")
+  status      EnrollmentStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId, status])
+  @@index([studentId, status])
+  @@map("enrollment")
+}
+
+model AcademicRecord {
+  id        Int          @id @default(autoincrement())
+  studentId Int          @map("student_id")
+  subjectId Int          @map("subject_id")
+  term      String       @db.VarChar(6)
+  status    RecordStatus
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, subjectId, term])
+  @@index([subjectId])
+  @@map("academic_record")
+}
