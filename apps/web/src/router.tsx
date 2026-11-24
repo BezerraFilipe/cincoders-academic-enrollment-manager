@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { OfferingsPage } from './pages/student/OfferingsPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -35,7 +36,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="ofertas" replace /> },
-      { path: 'ofertas', element: <PlaceholderPage title="Ofertas do semestre" /> },
+      { path: 'ofertas', element: <OfferingsPage /> },
       { path: 'matriculas', element: <PlaceholderPage title="Minhas matrículas" /> },
       { path: 'progresso', element: <PlaceholderPage title="Progresso no curso" /> },
     ],
