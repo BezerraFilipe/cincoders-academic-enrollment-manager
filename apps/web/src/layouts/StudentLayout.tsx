@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { AppHeader } from './AppHeader'
+import { StudentDetails } from './StudentDetails'
 
 const LINKS = [
   { to: 'ofertas', label: 'Ofertas' },
@@ -10,7 +11,7 @@ const LINKS = [
 export function StudentLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-      <AppHeader title="Área do aluno" />
+      <AppHeader title="Área do aluno" details={<StudentDetails />} />
       <main className="mx-auto w-full max-w-3xl flex-1 p-4 pb-20">
         <Outlet />
       </main>

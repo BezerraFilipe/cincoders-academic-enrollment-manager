@@ -19,7 +19,7 @@ import { AuthService } from './auth.service';
 import type { AuthenticatedUser } from './authenticated-user';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { AuthUserDto, LoginResponseDto } from './dto/auth-user.dto';
+import { CurrentUserDto, LoginResponseDto } from './dto/auth-user.dto';
 import { LoginDto } from './dto/login.dto';
 
 @ApiTags('auth')
@@ -41,11 +41,11 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth()
-  @ApiOkResponse({ type: AuthUserDto })
+  @ApiOkResponse({ type: CurrentUserDto })
   @ApiUnauthorizedResponse({
     description: 'Token ausente, inválido ou expirado.',
   })
-  me(@CurrentUser() user: AuthenticatedUser): Promise<AuthUserDto> {
+  me(@CurrentUser() user: AuthenticatedUser): Promise<CurrentUserDto> {
     return this.authService.getProfile(user.id);
   }
 }

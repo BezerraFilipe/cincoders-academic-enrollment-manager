@@ -86,6 +86,7 @@ describe('Auth (e2e)', () => {
       .expect(200);
 
     expect(response.body).toMatchObject({ id: userId, role: 'REGISTRAR' });
+    expect(response.body).not.toHaveProperty('student');
   });
 
   it('rejects an expired token', async () => {
