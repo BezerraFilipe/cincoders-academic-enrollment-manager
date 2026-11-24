@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { BusinessRuleException } from '../common/errors/business-rule.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentsService } from '../students/students.service';
 import { EnrollmentDto } from './dto/enrollment.dto';
@@ -31,6 +32,41 @@ export class EnrollmentsService {
     private readonly prisma: PrismaService,
     private readonly students: StudentsService,
   ) {}
+
+  async listActive(userId: number): Promise<EnrollmentDto[]> {
+    const student = await this.students.getByUserId(userId);
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { studentId: student.id, status: 'ACTIVE' },
+      include: ENROLLMENT_INCLUDE,
+      orderBy: [{ section: { subject: { code: 'asc' } } }],
+    });
+
+    return enrollments.map(toEnrollmentDto);
+  }
+
+  async cancel(userId: number, enrollmentId: number): Promise<void> {
+    const student = await this.students.getByUserId(userId);
+    const ownEnrollment = { id: enrollmentId, studentId: student.id };
+
+    const { count } = await this.prisma.enrollment.updateMany({
+      where: { ...ownEnrollment, status: 'ACTIVE' },
+      data: { status: 'CANCELLED', cancelledAt: new Date() },
+    });
+    if (count === 1) return;
+
+    const exists = await this.prisma.enrollment.count({ where: ownEnrollment });
+    if (!exists) {
+      throw new NotFoundException({
+        code: 'ENROLLMENT_NOT_FOUND',
+        message: 'Matrícula não encontrada.',
+      });
+    }
+
+    throw new BusinessRuleException(
+      'ENROLLMENT_NOT_ACTIVE',
+      'Esta matrícula já foi cancelada.',
+    );
+  }
 
   async enroll(userId: number, sectionId: number): Promise<EnrollmentDto> {
     const student = await this.students.getByUserId(userId);
