@@ -1,8 +1,20 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
@@ -20,6 +32,12 @@ import { EnrollmentsService } from './enrollments.service';
 export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
+  @Get()
+  @ApiOkResponse({ type: [EnrollmentDto] })
+  list(@CurrentUser() user: AuthenticatedUser): Promise<EnrollmentDto[]> {
+    return this.enrollmentsService.listActive(user.id);
+  }
+
   @Post()
   @ApiCreatedResponse({ type: EnrollmentDto })
   @ApiNotFoundResponse({ description: 'Turma não encontrada.' })
@@ -32,5 +50,21 @@ export class EnrollmentsController {
     @Body() { sectionId }: CreateEnrollmentDto,
   ): Promise<EnrollmentDto> {
     return this.enrollmentsService.enroll(user.id, sectionId);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({
+    description: 'Matrícula cancelada; a vaga volta para a turma.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Matrícula inexistente ou de outro aluno.',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'ENROLLMENT_NOT_ACTIVE' })
+  cancel(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<void> {
+    return this.enrollmentsService.cancel(user.id, id);
   }
 }

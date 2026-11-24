@@ -51,6 +51,7 @@ function offering(overrides: Partial<Offering>): Offering {
     availableSeats: 2,
     category: 'MANDATORY',
     enrolled: false,
+    enrolledInSubject: false,
     alreadyPassed: false,
     ...overrides,
   }
@@ -136,7 +137,9 @@ describe('OfferingsPage', () => {
   it('enrolls the student and refreshes the offerings', async () => {
     listOfferingsMock.mockResolvedValueOnce(page([offering({})]))
     listOfferingsMock.mockResolvedValue(
-      page([offering({ enrolled: true, occupiedSeats: 39, availableSeats: 1 })]),
+      page([
+        offering({ enrolled: true, enrolledInSubject: true, occupiedSeats: 39, availableSeats: 1 }),
+      ]),
     )
     enrollMock.mockResolvedValue({
       id: 1,
@@ -190,5 +193,22 @@ describe('OfferingsPage', () => {
     expect(
       await screen.findByRole('button', { name: 'Matricular em IF669 turma A' }),
     ).toBeDisabled()
+  })
+
+  it('blocks enrollment in another section of a subject the student is already enrolled in', async () => {
+    listOfferingsMock.mockResolvedValue(
+      page([
+        offering({ enrolled: true, enrolledInSubject: true }),
+        offering({ sectionId: 2, sectionCode: 'B', enrolledInSubject: true }),
+      ]),
+    )
+    renderPage()
+
+    expect(
+      await screen.findByRole('button', { name: 'Matricular em IF669 turma B' }),
+    ).toBeDisabled()
+    expect(
+      screen.getByText(/Você já está matriculado em outra turma desta disciplina/),
+    ).toBeInTheDocument()
   })
 })

@@ -20,6 +20,7 @@ interface OfferingBody {
   occupiedSeats: number;
   availableSeats: number;
   enrolled: boolean;
+  enrolledInSubject: boolean;
   alreadyPassed: boolean;
 }
 
@@ -153,5 +154,28 @@ describe('Offerings (e2e)', () => {
     const token = await loginAs(app, scenario.registrarEmail);
 
     await list(token).expect(403);
+  });
+
+  it('flags every section of a subject in which the student is already enrolled', async () => {
+    const otherSection = await prisma.section.create({
+      data: {
+        code: 'B',
+        subjectId: scenario.sharedSubjectId,
+        professorId: scenario.professorId,
+        capacity: 10,
+      },
+    });
+
+    const { body } = await list(tokenB).expect(200);
+    const sharedSections = (body.items as OfferingBody[]).filter(
+      (item) => item.subject.code === `${PREFIX}01`,
+    );
+
+    expect(sharedSections).toHaveLength(2);
+    expect(sharedSections.every((item) => item.enrolledInSubject)).toBe(true);
+    expect(
+      sharedSections.find((item) => item.sectionId === otherSection.id)
+        ?.enrolled,
+    ).toBe(false);
   });
 });

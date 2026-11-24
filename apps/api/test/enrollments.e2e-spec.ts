@@ -183,4 +183,69 @@ describe('Enrollments (e2e)', () => {
 
     await enroll(token, scenario.sharedSectionId).expect(403);
   });
+
+  describe('my enrollments and cancellation', () => {
+    const listMine = (token: string) =>
+      request(app.getHttpServer())
+        .get('/me/enrollments')
+        .set('Authorization', `Bearer ${token}`);
+
+    const cancel = (token: string, enrollmentId: number | string) =>
+      request(app.getHttpServer())
+        .delete(`/me/enrollments/${enrollmentId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+    it('lists only the active enrollments of the logged student', async () => {
+      const { body: own } = await enroll(
+        tokenA,
+        scenario.sharedSectionId,
+      ).expect(201);
+      await enroll(tokenB, scenario.freeSectionId).expect(201);
+      await prisma.enrollment.create({
+        data: {
+          studentId: scenario.studentAId,
+          sectionId: scenario.freeSectionId,
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+        },
+      });
+
+      const { body } = await listMine(tokenA).expect(200);
+
+      expect(
+        (body as { id: number }[]).map((enrollment) => enrollment.id),
+      ).toEqual([own.id]);
+    });
+
+    it('cancels an enrollment and returns the seat to the section', async () => {
+      const { body } = await enroll(tokenA, singleSeatSectionId).expect(201);
+
+      await cancel(tokenA, body.id).expect(204);
+
+      expect(await activeEnrollments(singleSeatSectionId)).toBe(0);
+      await enroll(tokenB, singleSeatSectionId).expect(201);
+    });
+
+    it('does not let a student cancel the enrollment of another student', async () => {
+      const { body } = await enroll(tokenB, scenario.freeSectionId).expect(201);
+
+      const response = await cancel(tokenA, body.id).expect(404);
+
+      expect(response.body).toMatchObject({ code: 'ENROLLMENT_NOT_FOUND' });
+      expect(await activeEnrollments(scenario.freeSectionId)).toBe(1);
+    });
+
+    it('rejects cancelling an enrollment twice', async () => {
+      const { body } = await enroll(tokenA, scenario.freeSectionId).expect(201);
+      await cancel(tokenA, body.id).expect(204);
+
+      const response = await cancel(tokenA, body.id).expect(422);
+
+      expect(response.body).toMatchObject({ code: 'ENROLLMENT_NOT_ACTIVE' });
+    });
+
+    it('rejects an invalid enrollment id', async () => {
+      await cancel(tokenA, 'abc').expect(400);
+    });
+  });
 });

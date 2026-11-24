@@ -10,5 +10,6 @@ export interface Offering {
   availableSeats: number
   category: SubjectCategory
   enrolled: boolean
+  enrolledInSubject: boolean
   alreadyPassed: boolean
 }
