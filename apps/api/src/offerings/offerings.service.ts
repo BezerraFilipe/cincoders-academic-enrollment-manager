@@ -51,7 +51,6 @@ export class OfferingsService {
     ]);
 
     const subjectIds = [...new Set(sections.map((s) => s.subject.id))];
-    const sectionIds = sections.map((s) => s.id);
 
     const [categories, passedRecords, activeEnrollments] = await Promise.all([
       this.curriculum.categorizeSubjects(student.courseId, subjectIds),
@@ -67,15 +66,18 @@ export class OfferingsService {
         where: {
           studentId: student.id,
           status: 'ACTIVE',
-          sectionId: { in: sectionIds },
+          section: { subjectId: { in: subjectIds } },
         },
-        select: { sectionId: true },
+        select: { sectionId: true, section: { select: { subjectId: true } } },
       }),
     ]);
 
     const passedSubjectIds = new Set(passedRecords.map((r) => r.subjectId));
     const enrolledSectionIds = new Set(
       activeEnrollments.map((e) => e.sectionId),
+    );
+    const enrolledSubjectIds = new Set(
+      activeEnrollments.map((e) => e.section.subjectId),
     );
 
     const items: OfferingDto[] = sections.map((section) => ({
@@ -91,6 +93,7 @@ export class OfferingsService {
       ),
       category: categories.get(section.subject.id)!,
       enrolled: enrolledSectionIds.has(section.id),
+      enrolledInSubject: enrolledSubjectIds.has(section.subject.id),
       alreadyPassed: passedSubjectIds.has(section.subject.id),
     }));
 

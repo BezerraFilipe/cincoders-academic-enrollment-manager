@@ -43,6 +43,12 @@ export class OfferingDto {
   @ApiProperty({ description: 'O aluno tem matrícula ativa nesta turma.' })
   enrolled!: boolean;
 
+  @ApiProperty({
+    description:
+      'O aluno tem matrícula ativa em alguma turma desta disciplina (nesta ou em outra).',
+  })
+  enrolledInSubject!: boolean;
+
   @ApiProperty({ description: 'O aluno já foi aprovado nesta disciplina.' })
   alreadyPassed!: boolean;
 }

@@ -18,6 +18,7 @@ export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: Offeri
   const { subject } = offering
   const isFull = offering.availableSeats === 0
   const status = statusMessage(offering)
+  const enrolledInAnotherSection = offering.enrolledInSubject && !offering.enrolled
 
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
@@ -45,15 +46,23 @@ export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: Offeri
       {status ? (
         <p className="text-sm font-medium text-green-700">{status}</p>
       ) : (
-        <button
-          type="button"
-          onClick={() => onEnroll(offering)}
-          disabled={isBusy || isFull}
-          aria-label={`Matricular em ${subject.code} turma ${offering.sectionCode}`}
-          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {isEnrolling ? 'Matriculando...' : 'Matricular'}
-        </button>
+        <div className="flex flex-col gap-2">
+          {enrolledInAnotherSection && (
+            <p className="text-sm text-slate-600">
+              Você já está matriculado em outra turma desta disciplina. Cancele aquela matrícula
+              para se matricular nesta.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => onEnroll(offering)}
+            disabled={isBusy || isFull || enrolledInAnotherSection}
+            aria-label={`Matricular em ${subject.code} turma ${offering.sectionCode}`}
+            className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            {isEnrolling ? 'Matriculando...' : 'Matricular'}
+          </button>
+        </div>
       )}
     </article>
   )
