@@ -33,6 +33,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://enrollment:enrollment@localhost:5432/enrollment?schema=public
       CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: ci-test-secret-with-at-least-thirty-two-chars
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
