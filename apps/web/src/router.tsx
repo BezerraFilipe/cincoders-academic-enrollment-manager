@@ -9,6 +9,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { MyEnrollmentsPage } from './pages/student/MyEnrollmentsPage'
 import { OfferingsPage } from './pages/student/OfferingsPage'
+import { ProgressPage } from './pages/student/ProgressPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
@@ -39,7 +40,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="ofertas" replace /> },
       { path: 'ofertas', element: <OfferingsPage /> },
       { path: 'matriculas', element: <MyEnrollmentsPage /> },
-      { path: 'progresso', element: <PlaceholderPage title="Progresso no curso" /> },
+      { path: 'progresso', element: <ProgressPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
