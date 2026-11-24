@@ -4,6 +4,7 @@ export interface EnrollmentEligibility {
   subjectCode: string;
   hasActiveEnrollmentInSubject: boolean;
   hasPassedSubject: boolean;
+  missingPrerequisiteCodes: string[];
   occupiedSeats: number;
   capacity: number;
 }
@@ -12,6 +13,7 @@ export function assertCanEnroll({
   subjectCode,
   hasActiveEnrollmentInSubject,
   hasPassedSubject,
+  missingPrerequisiteCodes,
   occupiedSeats,
   capacity,
 }: EnrollmentEligibility): void {
@@ -26,6 +28,13 @@ export function assertCanEnroll({
     throw new BusinessRuleException(
       'SUBJECT_ALREADY_PASSED',
       `Você já foi aprovado em ${subjectCode}.`,
+    );
+  }
+
+  if (missingPrerequisiteCodes.length > 0) {
+    throw new BusinessRuleException(
+      'PREREQUISITES_NOT_MET',
+      `Pré-requisitos pendentes para ${subjectCode}: ${missingPrerequisiteCodes.join(', ')}.`,
     );
   }
 

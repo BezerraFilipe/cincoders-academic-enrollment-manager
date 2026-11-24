@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ErrorWithRetry } from '../../components/feedback/ErrorWithRetry'
 import { Loading } from '../../components/feedback/Loading'
+import { CheckboxGroup } from '../../components/form/CheckboxGroup'
 import { TextField } from '../../components/form/TextField'
-import { useSaveSubject, useSubject } from '../../features/subjects/hooks'
+import { useSaveSubject, useSubject, useSubjectOptions } from '../../features/subjects/hooks'
 import type { Subject } from '../../features/subjects/types'
 import {
   validateSubject,
@@ -16,23 +17,40 @@ export function SubjectFormPage() {
   const params = useParams()
   const id = params.id ? Number(params.id) : undefined
   const subjectQuery = useSubject(id)
+  const optionsQuery = useSubjectOptions()
 
-  if (id !== undefined && subjectQuery.isPending)
-    return <Loading message="Carregando disciplina..." />
-  if (id !== undefined && subjectQuery.isError) {
+  const queries = [optionsQuery, ...(id !== undefined ? [subjectQuery] : [])]
+  const failed = queries.find((query) => query.isError)
+
+  if (failed) {
     return (
       <ErrorWithRetry
-        message={getErrorMessage(subjectQuery.error)}
-        onRetry={() => void subjectQuery.refetch()}
-        isRetrying={subjectQuery.isFetching}
+        message={getErrorMessage(failed.error)}
+        onRetry={() => queries.forEach((query) => void query.refetch())}
+        isRetrying={queries.some((query) => query.isFetching)}
       />
     )
   }
+  if (queries.some((query) => query.isPending)) {
+    return <Loading message="Carregando disciplina..." />
+  }
 
-  return <SubjectForm id={id} initial={subjectQuery.data} />
+  const prerequisiteOptions = (optionsQuery.data?.items ?? [])
+    .filter((subject) => subject.id !== id)
+    .map((subject) => ({ value: subject.id, label: `${subject.code} - ${subject.name}` }))
+
+  return (
+    <SubjectForm id={id} initial={subjectQuery.data} prerequisiteOptions={prerequisiteOptions} />
+  )
 }
 
-function SubjectForm({ id, initial }: { id: number | undefined; initial: Subject | undefined }) {
+interface SubjectFormProps {
+  id: number | undefined
+  initial: Subject | undefined
+  prerequisiteOptions: { value: number; label: string }[]
+}
+
+function SubjectForm({ id, initial, prerequisiteOptions }: SubjectFormProps) {
   const navigate = useNavigate()
   const saveMutation = useSaveSubject(id)
   const [values, setValues] = useState<SubjectFormValues>({
@@ -40,6 +58,10 @@ function SubjectForm({ id, initial }: { id: number | undefined; initial: Subject
     name: initial?.name ?? '',
     workloadHours: initial ? String(initial.workloadHours) : '',
   })
+  const [prerequisiteIds, setPrerequisiteIds] = useState<number[]>(
+    initial?.prerequisites.map((prerequisite) => prerequisite.id) ?? [],
+  )
+  const [prerequisiteError, setPrerequisiteError] = useState<string | undefined>()
   const [errors, setErrors] = useState<SubjectFormErrors>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
 
@@ -49,6 +71,7 @@ function SubjectForm({ id, initial }: { id: number | undefined; initial: Subject
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setGeneralError(null)
+    setPrerequisiteError(undefined)
 
     const validationErrors = validateSubject(values)
     setErrors(validationErrors)
@@ -59,12 +82,16 @@ function SubjectForm({ id, initial }: { id: number | undefined; initial: Subject
         code: values.code.trim().toUpperCase(),
         name: values.name.trim(),
         workloadHours: Number(values.workloadHours),
+        prerequisiteIds,
       },
       {
         onSuccess: () => navigate('/secretaria/disciplinas'),
         onError: (saveError) => {
-          if (getApiError(saveError)?.code === 'SUBJECT_CODE_TAKEN') {
+          const code = getApiError(saveError)?.code
+          if (code === 'SUBJECT_CODE_TAKEN') {
             setErrors({ code: getErrorMessage(saveError) })
+          } else if (code === 'PREREQUISITE_CYCLE' || code === 'PREREQUISITE_NOT_FOUND') {
+            setPrerequisiteError(getErrorMessage(saveError))
           } else {
             setGeneralError(getErrorMessage(saveError))
           }
@@ -108,6 +135,15 @@ function SubjectForm({ id, initial }: { id: number | undefined; initial: Subject
           value={values.workloadHours}
           onChange={(event) => setField('workloadHours')(event.target.value)}
           error={errors.workloadHours}
+        />
+
+        <CheckboxGroup
+          legend="Pré-requisitos"
+          options={prerequisiteOptions}
+          selected={prerequisiteIds}
+          onChange={setPrerequisiteIds}
+          error={prerequisiteError}
+          emptyMessage="Nenhuma outra disciplina cadastrada."
         />
 
         <div className="flex gap-3">

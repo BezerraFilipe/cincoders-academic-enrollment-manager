@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { BusinessRuleException } from '../common/errors/business-rule.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentsService } from '../students/students.service';
+import { missingPrerequisites } from '../subjects/missing-prerequisites';
 import { EnrollmentDto } from './dto/enrollment.dto';
 import { assertCanEnroll } from './enrollment-rules';
 
@@ -84,12 +85,21 @@ export class EnrollmentsService {
         });
       }
 
-      const [subject, activeInSubject, passedRecord, occupiedSeats] =
-        await Promise.all([
-          tx.subject.findUniqueOrThrow({
-            where: { id: section.subject_id },
-            select: { code: true },
-          }),
+      const subject = await tx.subject.findUniqueOrThrow({
+        where: { id: section.subject_id },
+        select: {
+          code: true,
+          prerequisites: {
+            select: { prerequisite: { select: { id: true, code: true } } },
+          },
+        },
+      });
+      const prerequisites = subject.prerequisites.map(
+        (item) => item.prerequisite,
+      );
+
+      const [activeInSubject, passedRecords, occupiedSeats] = await Promise.all(
+        [
           tx.enrollment.count({
             where: {
               studentId: student.id,
@@ -97,20 +107,29 @@ export class EnrollmentsService {
               section: { subjectId: section.subject_id },
             },
           }),
-          tx.academicRecord.count({
+          tx.academicRecord.findMany({
             where: {
               studentId: student.id,
-              subjectId: section.subject_id,
               status: 'PASSED',
+              subjectId: {
+                in: [section.subject_id, ...prerequisites.map((p) => p.id)],
+              },
             },
+            select: { subjectId: true },
           }),
           tx.enrollment.count({ where: { sectionId, status: 'ACTIVE' } }),
-        ]);
+        ],
+      );
+      const passedSubjectIds = new Set(passedRecords.map((r) => r.subjectId));
 
       assertCanEnroll({
         subjectCode: subject.code,
         hasActiveEnrollmentInSubject: activeInSubject > 0,
-        hasPassedSubject: passedRecord > 0,
+        hasPassedSubject: passedSubjectIds.has(section.subject_id),
+        missingPrerequisiteCodes: missingPrerequisites(
+          prerequisites,
+          passedSubjectIds,
+        ),
         occupiedSeats,
         capacity: section.capacity,
       });

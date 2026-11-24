@@ -12,4 +12,5 @@ export interface Offering {
   enrolled: boolean
   enrolledInSubject: boolean
   alreadyPassed: boolean
+  missingPrerequisites: string[]
 }

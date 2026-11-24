@@ -18,6 +18,13 @@ export function useSubject(id: number | undefined) {
   })
 }
 
+export function useSubjectOptions() {
+  return useQuery({
+    queryKey: ['subjects', 'options'],
+    queryFn: () => listSubjects({ search: '', page: 1, pageSize: 50 }),
+  })
+}
+
 export function useSaveSubject(id: number | undefined) {
   const queryClient = useQueryClient()
 

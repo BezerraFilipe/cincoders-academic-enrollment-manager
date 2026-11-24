@@ -19,6 +19,7 @@ export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: Offeri
   const isFull = offering.availableSeats === 0
   const status = statusMessage(offering)
   const enrolledInAnotherSection = offering.enrolledInSubject && !offering.enrolled
+  const hasPendingPrerequisites = offering.missingPrerequisites.length > 0
 
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
@@ -47,6 +48,11 @@ export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: Offeri
         <p className="text-sm font-medium text-green-700">{status}</p>
       ) : (
         <div className="flex flex-col gap-2">
+          {hasPendingPrerequisites && (
+            <p className="text-sm text-amber-800">
+              Pré-requisitos pendentes: {offering.missingPrerequisites.join(', ')}.
+            </p>
+          )}
           {enrolledInAnotherSection && (
             <p className="text-sm text-slate-600">
               Você já está matriculado em outra turma desta disciplina. Cancele aquela matrícula
@@ -56,7 +62,7 @@ export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: Offeri
           <button
             type="button"
             onClick={() => onEnroll(offering)}
-            disabled={isBusy || isFull || enrolledInAnotherSection}
+            disabled={isBusy || isFull || enrolledInAnotherSection || hasPendingPrerequisites}
             aria-label={`Matricular em ${subject.code} turma ${offering.sectionCode}`}
             className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
           >

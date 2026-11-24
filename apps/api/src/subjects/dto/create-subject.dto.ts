@@ -1,7 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsDivisibleBy,
+  IsOptional,
+  IsPositive,
   IsInt,
   IsString,
   Matches,
@@ -37,4 +42,17 @@ export class CreateSubjectDto {
   @Max(120, { message: 'A carga horária máxima é 120h.' })
   @IsDivisibleBy(15, { message: 'A carga horária deve ser múltipla de 15.' })
   workloadHours!: number;
+
+  @ApiProperty({
+    example: [1, 2],
+    required: false,
+    description: 'Ids das disciplinas exigidas como pré-requisito.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(20)
+  @IsInt({ each: true })
+  @IsPositive({ each: true })
+  prerequisiteIds?: number[];
 }

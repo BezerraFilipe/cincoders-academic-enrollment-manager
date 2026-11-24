@@ -53,6 +53,7 @@ function offering(overrides: Partial<Offering>): Offering {
     enrolled: false,
     enrolledInSubject: false,
     alreadyPassed: false,
+    missingPrerequisites: [],
     ...overrides,
   }
 }
@@ -210,5 +211,17 @@ describe('OfferingsPage', () => {
     expect(
       screen.getByText(/Você já está matriculado em outra turma desta disciplina/),
     ).toBeInTheDocument()
+  })
+
+  it('blocks enrollment while prerequisites are pending', async () => {
+    listOfferingsMock.mockResolvedValue(
+      page([offering({ missingPrerequisites: ['IF669', 'IF670'] })]),
+    )
+    renderPage()
+
+    expect(
+      await screen.findByRole('button', { name: 'Matricular em IF669 turma A' }),
+    ).toBeDisabled()
+    expect(screen.getByText('Pré-requisitos pendentes: IF669, IF670.')).toBeInTheDocument()
   })
 })

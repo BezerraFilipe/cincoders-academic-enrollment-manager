@@ -1,5 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class PrerequisiteDto {
+  @ApiProperty({ example: 1 })
+  id!: number;
+
+  @ApiProperty({ example: 'IF669' })
+  code!: string;
+
+  @ApiProperty({ example: 'Introdução à Programação' })
+  name!: string;
+}
+
 export class SubjectDto {
   @ApiProperty({ example: 1 })
   id!: number;
@@ -12,6 +23,9 @@ export class SubjectDto {
 
   @ApiProperty({ example: 60 })
   workloadHours!: number;
+
+  @ApiProperty({ type: [PrerequisiteDto] })
+  prerequisites!: PrerequisiteDto[];
 }
 
 export class SubjectsPageDto {

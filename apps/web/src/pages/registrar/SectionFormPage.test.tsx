@@ -43,7 +43,15 @@ describe('SectionFormPage', () => {
     createMock.mockReset()
     updateMock.mockReset()
     vi.mocked(listSubjects).mockResolvedValue({
-      items: [{ id: 1, code: 'IF669', name: 'Introdução à Programação', workloadHours: 60 }],
+      items: [
+        {
+          id: 1,
+          code: 'IF669',
+          name: 'Introdução à Programação',
+          workloadHours: 60,
+          prerequisites: [],
+        },
+      ],
       total: 1,
       page: 1,
       pageSize: 50,
