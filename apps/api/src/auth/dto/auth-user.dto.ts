@@ -1,5 +1,21 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../../generated/prisma/client.js';
+
+export class StudentCourseDto {
+  @ApiProperty({ example: 'CC' })
+  code!: string;
+
+  @ApiProperty({ example: 'Ciência da Computação' })
+  name!: string;
+}
+
+export class StudentProfileDto {
+  @ApiProperty({ example: '20230001' })
+  registrationNumber!: string;
+
+  @ApiProperty({ type: StudentCourseDto })
+  course!: StudentCourseDto;
+}
 
 export class AuthUserDto {
   @ApiProperty({ example: 1 })
@@ -13,6 +29,14 @@ export class AuthUserDto {
 
   @ApiProperty({ enum: UserRole, example: UserRole.STUDENT })
   role!: UserRole;
+}
+
+export class CurrentUserDto extends AuthUserDto {
+  @ApiPropertyOptional({
+    type: StudentProfileDto,
+    description: 'Presente apenas para usuários com perfil de aluno.',
+  })
+  student?: StudentProfileDto;
 }
 
 export class LoginResponseDto {

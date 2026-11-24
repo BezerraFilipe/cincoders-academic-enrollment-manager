@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import type { JwtPayload } from './authenticated-user';
-import { AuthUserDto, LoginResponseDto } from './dto/auth-user.dto';
+import { CurrentUserDto, LoginResponseDto } from './dto/auth-user.dto';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$10$6a34JsBYhj9DL4uCCU946e8f8kntv.ExSwEWr9UGQuNy3JIss9uiC';
@@ -41,10 +41,21 @@ export class AuthService {
     };
   }
 
-  async getProfile(userId: number): Promise<AuthUserDto> {
+  async getProfile(userId: number): Promise<CurrentUserDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, role: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        student: {
+          select: {
+            registrationNumber: true,
+            course: { select: { code: true, name: true } },
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -54,6 +65,7 @@ export class AuthService {
       });
     }
 
-    return user;
+    const { student, ...profile } = user;
+    return student ? { ...profile, student } : profile;
   }
 }

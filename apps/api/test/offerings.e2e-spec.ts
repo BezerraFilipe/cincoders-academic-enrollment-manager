@@ -178,4 +178,20 @@ describe('Offerings (e2e)', () => {
         ?.enrolled,
     ).toBe(false);
   });
+
+  it('returns the student profile with registration number and course on /auth/me', async () => {
+    const { body } = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+
+    expect(body).toMatchObject({
+      email: scenario.studentAEmail,
+      role: 'STUDENT',
+      student: {
+        registrationNumber: `${PREFIX}-A`,
+        course: { code: `${PREFIX}-A`, name: `${PREFIX} Curso A` },
+      },
+    });
+  });
 });
