@@ -51,6 +51,14 @@ export class OfferingDto {
 
   @ApiProperty({ description: 'O aluno já foi aprovado nesta disciplina.' })
   alreadyPassed!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    example: ['IF669'],
+    description:
+      'Códigos dos pré-requisitos em que o aluno ainda não foi aprovado.',
+  })
+  missingPrerequisites!: string[];
 }
 
 export class OfferingsPageDto {

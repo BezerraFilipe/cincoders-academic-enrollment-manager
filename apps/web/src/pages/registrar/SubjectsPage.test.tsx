@@ -16,7 +16,15 @@ const listMock = vi.mocked(listSubjects)
 const deleteMock = vi.mocked(deleteSubject)
 
 const page = {
-  items: [{ id: 1, code: 'IF669', name: 'Introdução à Programação', workloadHours: 60 }],
+  items: [
+    {
+      id: 1,
+      code: 'IF669',
+      name: 'Introdução à Programação',
+      workloadHours: 60,
+      prerequisites: [],
+    },
+  ],
   total: 1,
   page: 1,
   pageSize: 10,

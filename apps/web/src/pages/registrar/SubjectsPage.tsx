@@ -79,6 +79,7 @@ export function SubjectsPage() {
                   <th className="px-4 py-3 font-medium">Código</th>
                   <th className="px-4 py-3 font-medium">Nome</th>
                   <th className="px-4 py-3 font-medium">Carga horária</th>
+                  <th className="px-4 py-3 font-medium">Pré-requisitos</th>
                   <th className="px-4 py-3 font-medium">
                     <span className="sr-only">Ações</span>
                   </th>
@@ -90,6 +91,11 @@ export function SubjectsPage() {
                     <td className="px-4 py-3 font-medium text-slate-900">{subject.code}</td>
                     <td className="px-4 py-3 text-slate-800">{subject.name}</td>
                     <td className="px-4 py-3 text-slate-800">{subject.workloadHours}h</td>
+                    <td className="px-4 py-3 text-slate-800">
+                      {subject.prerequisites.length > 0
+                        ? subject.prerequisites.map((prerequisite) => prerequisite.code).join(', ')
+                        : '—'}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-4">
                         <Link

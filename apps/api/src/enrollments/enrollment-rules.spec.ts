@@ -5,6 +5,7 @@ const eligible: EnrollmentEligibility = {
   subjectCode: 'IF669',
   hasActiveEnrollmentInSubject: false,
   hasPassedSubject: false,
+  missingPrerequisiteCodes: [],
   occupiedSeats: 0,
   capacity: 10,
 };
@@ -48,5 +49,17 @@ describe('assertCanEnroll', () => {
     expect(
       codeOf({ hasActiveEnrollmentInSubject: true, occupiedSeats: 10 }),
     ).toBe('DUPLICATE_ACTIVE_ENROLLMENT');
+  });
+
+  it('rejects a subject with prerequisites the student has not passed', () => {
+    expect(codeOf({ missingPrerequisiteCodes: ['IF669'] })).toBe(
+      'PREREQUISITES_NOT_MET',
+    );
+  });
+
+  it('reports missing prerequisites before a full section', () => {
+    expect(
+      codeOf({ missingPrerequisiteCodes: ['IF669'], occupiedSeats: 10 }),
+    ).toBe('PREREQUISITES_NOT_MET');
   });
 });

@@ -5,6 +5,7 @@ import { CurriculumService } from '../curriculum/curriculum.service';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentsService } from '../students/students.service';
+import { missingPrerequisites } from '../subjects/missing-prerequisites';
 import { OfferingDto, OfferingsPageDto } from './dto/offering.dto';
 
 @Injectable()
@@ -40,7 +41,15 @@ export class OfferingsService {
         take: pageSize,
         include: {
           subject: {
-            select: { id: true, code: true, name: true, workloadHours: true },
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              workloadHours: true,
+              prerequisites: {
+                select: { prerequisite: { select: { id: true, code: true } } },
+              },
+            },
           },
           professor: { select: { name: true } },
           _count: {
@@ -51,6 +60,9 @@ export class OfferingsService {
     ]);
 
     const subjectIds = [...new Set(sections.map((s) => s.subject.id))];
+    const prerequisiteIds = sections.flatMap((s) =>
+      s.subject.prerequisites.map((item) => item.prerequisite.id),
+    );
 
     const [categories, passedRecords, activeEnrollments] = await Promise.all([
       this.curriculum.categorizeSubjects(student.courseId, subjectIds),
@@ -58,7 +70,7 @@ export class OfferingsService {
         where: {
           studentId: student.id,
           status: 'PASSED',
-          subjectId: { in: subjectIds },
+          subjectId: { in: [...subjectIds, ...prerequisiteIds] },
         },
         select: { subjectId: true },
       }),
@@ -83,7 +95,12 @@ export class OfferingsService {
     const items: OfferingDto[] = sections.map((section) => ({
       sectionId: section.id,
       sectionCode: section.code,
-      subject: section.subject,
+      subject: {
+        id: section.subject.id,
+        code: section.subject.code,
+        name: section.subject.name,
+        workloadHours: section.subject.workloadHours,
+      },
       professorName: section.professor.name,
       capacity: section.capacity,
       occupiedSeats: section._count.enrollments,
@@ -95,6 +112,10 @@ export class OfferingsService {
       enrolled: enrolledSectionIds.has(section.id),
       enrolledInSubject: enrolledSubjectIds.has(section.subject.id),
       alreadyPassed: passedSubjectIds.has(section.subject.id),
+      missingPrerequisites: missingPrerequisites(
+        section.subject.prerequisites.map((item) => item.prerequisite),
+        passedSubjectIds,
+      ),
     }));
 
     return toPage(items, total, page, pageSize);
