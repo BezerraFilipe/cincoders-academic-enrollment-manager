@@ -1,9 +1,23 @@
 import { CategoryBadge } from './CategoryBadge'
 import type { Offering } from './types'
 
-export function OfferingCard({ offering }: { offering: Offering }) {
+interface OfferingCardProps {
+  offering: Offering
+  onEnroll: (offering: Offering) => void
+  isEnrolling: boolean
+  isBusy: boolean
+}
+
+function statusMessage(offering: Offering): string | null {
+  if (offering.enrolled) return 'Você está matriculado nesta turma.'
+  if (offering.alreadyPassed) return 'Você já foi aprovado nesta disciplina.'
+  return null
+}
+
+export function OfferingCard({ offering, onEnroll, isEnrolling, isBusy }: OfferingCardProps) {
   const { subject } = offering
   const isFull = offering.availableSeats === 0
+  const status = statusMessage(offering)
 
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
@@ -28,12 +42,18 @@ export function OfferingCard({ offering }: { offering: Offering }) {
         </dd>
       </dl>
 
-      {(offering.enrolled || offering.alreadyPassed) && (
-        <p className="text-sm font-medium text-green-700">
-          {offering.enrolled
-            ? 'Você está matriculado nesta turma.'
-            : 'Você já foi aprovado nesta disciplina.'}
-        </p>
+      {status ? (
+        <p className="text-sm font-medium text-green-700">{status}</p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onEnroll(offering)}
+          disabled={isBusy || isFull}
+          aria-label={`Matricular em ${subject.code} turma ${offering.sectionCode}`}
+          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          {isEnrolling ? 'Matriculando...' : 'Matricular'}
+        </button>
       )}
     </article>
   )
