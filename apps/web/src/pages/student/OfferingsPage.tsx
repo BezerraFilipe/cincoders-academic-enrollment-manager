@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { EmptyState } from '../../components/feedback/EmptyState'
 import { ErrorWithRetry } from '../../components/feedback/ErrorWithRetry'
+import { FeedbackMessage, type Feedback } from '../../components/feedback/FeedbackMessage'
 import { Loading } from '../../components/feedback/Loading'
 import { Pagination } from '../../components/list/Pagination'
 import { SearchInput } from '../../components/list/SearchInput'
+import { useEnroll } from '../../features/enrollments/use-enroll'
 import { OfferingCard } from '../../features/offerings/OfferingCard'
+import type { Offering } from '../../features/offerings/types'
 import { useOfferings } from '../../features/offerings/use-offerings'
 import { useListParams } from '../../hooks/use-list-params'
 import { getErrorMessage } from '../../lib/api-error'
@@ -11,6 +15,21 @@ import { getErrorMessage } from '../../lib/api-error'
 export function OfferingsPage() {
   const { search, page, searchInput, setSearchInput, setPage } = useListParams()
   const { data, isPending, isError, error, refetch, isFetching } = useOfferings({ search, page })
+  const enrollMutation = useEnroll()
+  const [feedback, setFeedback] = useState<Feedback | null>(null)
+
+  const handleEnroll = (offering: Offering) => {
+    setFeedback(null)
+    enrollMutation.mutate(offering.sectionId, {
+      onSuccess: () =>
+        setFeedback({
+          type: 'success',
+          message: `Matrícula realizada em ${offering.subject.code} - ${offering.subject.name} (turma ${offering.sectionCode}).`,
+        }),
+      onError: (enrollError) =>
+        setFeedback({ type: 'error', message: getErrorMessage(enrollError) }),
+    })
+  }
 
   return (
     <section className="flex flex-col gap-4">
@@ -21,6 +40,8 @@ export function OfferingsPage() {
         onChange={setSearchInput}
         placeholder="Buscar por código ou nome da disciplina"
       />
+
+      {feedback && <FeedbackMessage feedback={feedback} onDismiss={() => setFeedback(null)} />}
 
       {isPending && <Loading message="Carregando ofertas..." />}
 
@@ -47,7 +68,14 @@ export function OfferingsPage() {
           <ul className="flex flex-col gap-3">
             {data.items.map((offering) => (
               <li key={offering.sectionId}>
-                <OfferingCard offering={offering} />
+                <OfferingCard
+                  offering={offering}
+                  onEnroll={handleEnroll}
+                  isBusy={enrollMutation.isPending}
+                  isEnrolling={
+                    enrollMutation.isPending && enrollMutation.variables === offering.sectionId
+                  }
+                />
               </li>
             ))}
           </ul>

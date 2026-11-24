@@ -1,8 +1,9 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { AxiosError } from 'axios'
+import { AxiosError, AxiosHeaders } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLocation } from 'react-router'
+import { enroll } from '../../features/enrollments/api'
 import { listOfferings } from '../../features/offerings/api'
 import type { Offering } from '../../features/offerings/types'
 import { renderRoutes } from '../../test/render'
@@ -13,7 +14,10 @@ vi.mock('../../features/offerings/api', () => ({
   OFFERINGS_PAGE_SIZE: 10,
 }))
 
+vi.mock('../../features/enrollments/api', () => ({ enroll: vi.fn() }))
+
 const listOfferingsMock = vi.mocked(listOfferings)
+const enrollMock = vi.mocked(enroll)
 
 function LocationProbe() {
   return <p data-testid="location">{useLocation().search}</p>
@@ -59,6 +63,7 @@ function page(items: Offering[]) {
 describe('OfferingsPage', () => {
   beforeEach(() => {
     listOfferingsMock.mockReset()
+    enrollMock.mockReset()
   })
 
   it('lists offerings with category and available seats', async () => {
@@ -126,5 +131,64 @@ describe('OfferingsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
 
     expect(await screen.findByText('Introdução à Programação')).toBeInTheDocument()
+  })
+
+  it('enrolls the student and refreshes the offerings', async () => {
+    listOfferingsMock.mockResolvedValueOnce(page([offering({})]))
+    listOfferingsMock.mockResolvedValue(
+      page([offering({ enrolled: true, occupiedSeats: 39, availableSeats: 1 })]),
+    )
+    enrollMock.mockResolvedValue({
+      id: 1,
+      sectionId: 1,
+      sectionCode: 'A',
+      subject: { code: 'IF669', name: 'Introdução à Programação', workloadHours: 60 },
+      professorName: 'Paulo Borba',
+      createdAt: new Date().toISOString(),
+    })
+    renderPage()
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Matricular em IF669 turma A' }),
+    )
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Matrícula realizada em IF669')
+    expect(enrollMock).toHaveBeenCalledWith(1, expect.anything())
+    expect(await screen.findByText('Você está matriculado nesta turma.')).toBeInTheDocument()
+  })
+
+  it('shows the business rule message when the enrollment is refused', async () => {
+    listOfferingsMock.mockResolvedValue(page([offering({})]))
+    enrollMock.mockRejectedValue(
+      new AxiosError('Unprocessable', '422', undefined, undefined, {
+        status: 422,
+        statusText: '',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+        data: {
+          statusCode: 422,
+          code: 'SECTION_FULL',
+          message: 'Turma lotada. Não há vagas disponíveis.',
+        },
+      }),
+    )
+    renderPage()
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Matricular em IF669 turma A' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Turma lotada. Não há vagas disponíveis.',
+    )
+  })
+
+  it('disables enrollment in a full section', async () => {
+    listOfferingsMock.mockResolvedValue(page([offering({ availableSeats: 0, occupiedSeats: 40 })]))
+    renderPage()
+
+    expect(
+      await screen.findByRole('button', { name: 'Matricular em IF669 turma A' }),
+    ).toBeDisabled()
   })
 })
