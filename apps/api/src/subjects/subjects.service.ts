@@ -145,7 +145,7 @@ export class SubjectsService {
 }
 
 async function lockPrerequisiteGraph(tx: Transaction): Promise<void> {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(${PREREQUISITE_GRAPH_LOCK})`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${PREREQUISITE_GRAPH_LOCK})`;
 }
 
 async function replacePrerequisites(
