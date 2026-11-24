@@ -6,6 +6,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { HealthModule } from './health/health.module';
 import { OfferingsModule } from './offerings/offerings.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProfessorsModule } from './professors/professors.module';
 import { ProgressModule } from './progress/progress.module';
 import { SubjectsModule } from './subjects/subjects.module';
 
@@ -22,6 +23,7 @@ import { SubjectsModule } from './subjects/subjects.module';
     EnrollmentsModule,
     ProgressModule,
     SubjectsModule,
+    ProfessorsModule,
   ],
 })
 export class AppModule {}
