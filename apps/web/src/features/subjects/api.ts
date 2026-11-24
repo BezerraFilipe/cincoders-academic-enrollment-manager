@@ -7,9 +7,14 @@ export const SUBJECTS_PAGE_SIZE = 10
 export async function listSubjects(params: {
   search: string
   page: number
+  pageSize?: number
 }): Promise<Page<Subject>> {
   const { data } = await apiClient.get<Page<Subject>>('/subjects', {
-    params: { search: params.search || undefined, page: params.page, pageSize: SUBJECTS_PAGE_SIZE },
+    params: {
+      search: params.search || undefined,
+      page: params.page,
+      pageSize: params.pageSize ?? SUBJECTS_PAGE_SIZE,
+    },
   })
   return data
 }

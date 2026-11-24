@@ -8,6 +8,7 @@ import { OfferingsModule } from './offerings/offerings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfessorsModule } from './professors/professors.module';
 import { ProgressModule } from './progress/progress.module';
+import { SectionsModule } from './sections/sections.module';
 import { SubjectsModule } from './subjects/subjects.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { SubjectsModule } from './subjects/subjects.module';
     ProgressModule,
     SubjectsModule,
     ProfessorsModule,
+    SectionsModule,
   ],
 })
 export class AppModule {}
