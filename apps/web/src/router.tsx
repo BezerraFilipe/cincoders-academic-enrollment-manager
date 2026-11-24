@@ -7,6 +7,8 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { SubjectFormPage } from './pages/registrar/SubjectFormPage'
+import { SubjectsPage } from './pages/registrar/SubjectsPage'
 import { MyEnrollmentsPage } from './pages/student/MyEnrollmentsPage'
 import { OfferingsPage } from './pages/student/OfferingsPage'
 import { ProgressPage } from './pages/student/ProgressPage'
@@ -24,7 +26,9 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="disciplinas" replace /> },
-      { path: 'disciplinas', element: <PlaceholderPage title="Disciplinas" /> },
+      { path: 'disciplinas', element: <SubjectsPage /> },
+      { path: 'disciplinas/nova', element: <SubjectFormPage /> },
+      { path: 'disciplinas/:id/editar', element: <SubjectFormPage /> },
       { path: 'professores', element: <PlaceholderPage title="Professores" /> },
       { path: 'turmas', element: <PlaceholderPage title="Turmas" /> },
     ],
