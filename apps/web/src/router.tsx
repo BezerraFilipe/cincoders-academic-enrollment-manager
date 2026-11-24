@@ -6,9 +6,10 @@ import { StudentLayout } from './layouts/StudentLayout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { PlaceholderPage } from './pages/PlaceholderPage'
 import { ProfessorFormPage } from './pages/registrar/ProfessorFormPage'
 import { ProfessorsPage } from './pages/registrar/ProfessorsPage'
+import { SectionFormPage } from './pages/registrar/SectionFormPage'
+import { SectionsPage } from './pages/registrar/SectionsPage'
 import { SubjectFormPage } from './pages/registrar/SubjectFormPage'
 import { SubjectsPage } from './pages/registrar/SubjectsPage'
 import { MyEnrollmentsPage } from './pages/student/MyEnrollmentsPage'
@@ -34,7 +35,9 @@ export const router = createBrowserRouter([
       { path: 'professores', element: <ProfessorsPage /> },
       { path: 'professores/novo', element: <ProfessorFormPage /> },
       { path: 'professores/:id/editar', element: <ProfessorFormPage /> },
-      { path: 'turmas', element: <PlaceholderPage title="Turmas" /> },
+      { path: 'turmas', element: <SectionsPage /> },
+      { path: 'turmas/nova', element: <SectionFormPage /> },
+      { path: 'turmas/:id/editar', element: <SectionFormPage /> },
     ],
   },
   {
